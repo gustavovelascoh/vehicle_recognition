@@ -18,13 +18,25 @@ int main(int argc, char** argv)
 	{
             return -1;
         }
+        
 	bool use_cam = false;
+        int use_mog = 1;
+        int history = 500;
+        int nog = 5;
+        float bgr = 0.5;
+        
 	VideoCapture cap;
 	
 	for (int i=0; i < argc; i++)
         {
-		if (!strcmp(argv[i], "-c"))
-			use_cam = true;
+            if (!strcmp(argv[i], "-c"))
+		use_cam = true;
+            if (!strcmp(argv[i], "-mog"))
+                use_mog = 1;
+            if (!strcmp(argv[i], "-mog2"))
+                use_mog = 2;
+            if (!strcmp(argv[i], "history"))
+                use_mog = 2;
 	}
 	if (use_cam)
 	{
@@ -41,8 +53,25 @@ int main(int argc, char** argv)
 	if(!cap.isOpened())  // check if we succeeded
 		return -1;
 	
+        if (use_mog != 0 && (argc < 6 && argc > (3 + (use_cam)?0:1)))
+        {
+            std::cout << "Missing arguments: Receive " << argc << " arguments, expected 6 or 7" << std::endl;
+            return -1;
+        }
+            
 	//Mat bg1m, bg1;
 	//Mat out;
+        
+        /* BackgroundSubtractorMOG(int history, int nmixtures, double backgroundRatio, double noiseSigma=0)
+        /* Parameters:	
+        /* history – Length of the history.
+        /* nmixtures – Number of Gaussian mixtures.
+        /* backgroundRatio – Background ratio.
+        /* noiseSigma – Noise strength.
+        /* 
+        */
+        BackgroundSubtractor bg_sub;
+        
 	BackgroundSubtractorMOG bgsub1(500,5,0.5);
 	BackgroundSubtractorMOG2 bgsub2(500,16,false);
 	namedWindow("CamCap",1);
@@ -80,11 +109,24 @@ void print_help()
     std::cout
     << "bgsub: Background substraction" << std::endl
     << "" << std::endl
-    << "USAGE: bgsub {-c | -f {filename} | -h}" << std::endl
+    << "USAGE: bgsub {-c | -f {filename} | -h} [{-mog [history nog br]| -mog2 [history thr shdet]}]" << std::endl
     << "-c\tUse default camera" << std::endl
     << "-f\tUse file specified by filename" << std::endl
-    << "-h\tDisplay this menu" << std::endl;
-    //<< "" << endl;
-    //<< "" << endl;
+    << "-h\tDisplay this menu" << std::endl
+    << "" << std::endl
+    << "-mog\tUse BackgroundSubtractorMOG class [default]" << std::endl
+    << "\thistory\tLength of the history. [default = 500]" << std::endl
+    << "\tnog\tNumber of Gaussian mixtures. [default = 5]" << std::endl
+    << "\tbr\tBackground ratio. [default = 0.5]" << std::endl
+    << "" << std::endl
+    << "-mog2\tUse BackgroundSubtractorMOG2 class:" << std::endl
+    << "\thistory\tLength of the history. [default = 500]" << std::endl
+    << "\tthr\tThreshold. [default = 16]" << std::endl
+    << "\tshdet\tEnable/disable shadow detection [default = True]" << std::endl
+    << "" << std::endl
+    << "If neither -mog nor mog2 optiones are selected, it will take default values." << std::endl;
+    //<< "" << std::endl
+    //<< "" << std::endl
+    //<< "" << std::endl
     
 }
