@@ -52,14 +52,19 @@ int main(int argc, char** argv)
         
         frame.copyTo(frame_masked,op_mask);
         
-        
+        std::stringstream ss;
+        rectangle(frame,cv::Point(150,5),cv::Point(250,25),cv::Scalar(255,255,255,-1));
+        ss << "frame " << cap.get(CV_CAP_PROP_POS_FRAMES);
+        std::string fns = ss.str();
+
+        putText(frame,fns.c_str(),cv::Point(165,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
         //bgsub1.getBackgroundImage(bg1);
         
         imshow("Origin", frame);
         imshow("Background mask", bg_mask);
         imshow("Opening", frame_masked);
         
-        key = waitKey(30);
+        key = waitKey(15);
         
         if (key == 112)
         {
@@ -76,31 +81,4 @@ int main(int argc, char** argv)
     }
     // the camera will be deinitialized automatically in VideoCapture destructor
     return 0;
-}
-
-void print_help()
-{
-    std::cout
-    << "bgsub: Background substraction" << std::endl
-    << "" << std::endl
-    << "USAGE: bgsub {-c | -f {filename} | -h} [{-mog [history nog br]| -mog2 [history thr shdet]}]" << std::endl
-    << "-c\tUse default camera" << std::endl
-    << "-f\tUse file specified by filename" << std::endl
-    << "-h\tDisplay this menu" << std::endl
-    << "" << std::endl
-    << "-mog\tUse BackgroundSubtractorMOG class [default]" << std::endl
-    << "\thistory\tLength of the history. [default = 500]" << std::endl
-    << "\tnog\tNumber of Gaussian mixtures. [default = 5]" << std::endl
-    << "\tbr\tBackground ratio. [default = 0.5]" << std::endl
-    << "" << std::endl
-    << "-mog2\tUse BackgroundSubtractorMOG2 class:" << std::endl
-    << "\thistory\tLength of the history. [default = 500]" << std::endl
-    << "\tthr\tThreshold. [default = 16]" << std::endl
-    << "\tshdet\tEnable/disable shadow detection [default = True]" << std::endl
-    << "" << std::endl
-    << "If neither -mog nor mog2 optiones are selected, it will take default values." << std::endl;
-    //<< "" << std::endl
-    //<< "" << std::endl
-    //<< "" << std::endl
-    
 }
