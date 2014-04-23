@@ -31,15 +31,15 @@ int main(int argc, char** argv)
     if(!cap.isOpened())  // check if we succeeded
 	return -1;
     
-    BackgroundSubtractorMOG2 bg_sub(500,32,false);
+    BackgroundSubtractorMOG2 bg_sub(500,40,false);
     
-    Mat element = getStructuringElement(MORPH_ELLIPSE, Size(7,7),Point(3,3));
-    namedWindow("Origin",1);
-    namedWindow("Background mask",1);
-    namedWindow("Opening",1);
+    Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
+    namedWindow("Frame",1);
+    namedWindow("Mask",1);
+    namedWindow("Closing(Frame & Mask)",1);
     for(;;)
     {
-        Mat frame, bg_mask, frame_masked, op_mask;
+        Mat frame, bg_mask, frame_masked, cl_mask;
         cap >> frame; // get a new frame from camera
         
         if (crop)
@@ -68,6 +68,7 @@ int main(int argc, char** argv)
 
 		  Mat b_hist, g_hist, r_hist;
 
+		/*
 		  /// Compute the histograms:
 		  calcHist( &bgr_planes[0], 1, 0, Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
 		  calcHist( &bgr_planes[1], 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
@@ -101,29 +102,42 @@ int main(int argc, char** argv)
 		  /// Display
 		  namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
 		  imshow("calcHist Demo", histImage );
-
+		*/
         //cvtColor(frame, frame, CV_BGR2GRAY);
         GaussianBlur(frame, frame, Size(5,5), 1.5, 1.5);
         
         bg_sub(frame,bg_mask);
         
-        morphologyEx(bg_mask, op_mask, CV_MOP_CLOSE, element, Point(3,3), 3);
-        frame.copyTo(frame_masked,op_mask);
+        morphologyEx(bg_mask, cl_mask, CV_MOP_CLOSE, element, Point(2,2), 3);
+        frame.copyTo(frame_masked,cl_mask);
         
         std::stringstream ss;
-        rectangle(frame,cv::Point(100,5),cv::Point(210,25),cv::Scalar(255,255,255,-1),CV_FILLED);
+		
+        rectangle(frame,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
+		rectangle(bg_mask,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
+		rectangle(frame_masked,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
+		
         ss << "frame " << cap.get(CV_CAP_PROP_POS_FRAMES);
         std::string fns = ss.str();
 
-        putText(frame,fns.c_str(),cv::Point(105,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
+        putText(frame,fns.c_str(),cv::Point(25,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
+		putText(bg_mask,fns.c_str(),cv::Point(25,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
+		putText(frame_masked,fns.c_str(),cv::Point(25,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
         //bgsub1.getBackgroundImage(bg1);
+		
+		if(cap.get(CV_CAP_PROP_POS_FRAMES) == 80)
+		{
+			imwrite("580f.jpg",frame);
+			imwrite("580bgm.jpg",bg_mask);
+			imwrite("580fg.jpg",frame_masked);
+		}
         
-        imshow("Origin", frame);
-        imshow("Background mask", bg_mask);
-        imshow("Opening", frame_masked);
+        imshow("Frame", frame);
+        imshow("Mask", bg_mask);
+        imshow("Closing(Frame & Mask)", frame_masked);
         
-        key = waitKey(10);
-        
+        key = (char) waitKey(10);
+        //std::cout << "key " << key << std::endl;
         if (key == 112)
         {
             while(key < 0 || key == 112)
