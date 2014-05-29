@@ -3,16 +3,19 @@
 #include "opencv2/imgproc/imgproc.hpp"
 
 using namespace cv;
+void show_cap_info(VideoCapture cap, std::string);
 
 int main(int argc, char** argv)
 {
     int key = 0, crop = 0;
+    int init_tick, final_tick, total_tick;
+    float final_secs;
     VideoCapture cap;
     std::string input;
-    std::vector<int> frames_to_save;
+
     if (argc < 2)
     {
-        input = "../media_src/the_video.mp4";
+        input = "./media_src/the_video.mp4";
         crop = 1;
     }
     else
@@ -21,42 +24,146 @@ int main(int argc, char** argv)
     }
     
     cap = VideoCapture(input);
-    Size S = Size((int) cap.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
-                  (int) cap.get(CV_CAP_PROP_FRAME_HEIGHT));
-    
-    std::cout << "Opening file " << input << std::endl;
-    std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
-         << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
-    
+
     if(!cap.isOpened())  // check if we succeeded
-	return -1;
+    	return -1;
+
+    show_cap_info(cap,input);
+
+    static const int arr[] = {2160, 2260, 4380, 6170, 6390};
+    std::vector<int> frames_to_save (arr, arr + sizeof(arr) / sizeof(arr[0]) );
     
-    BackgroundSubtractorMOG2 bg_sub(500,40,false);
+    int history =  500;
+    float varThreshold = 21;
+    
+    std::stringstream ln1, ln2, ln3;
+    
+    BackgroundSubtractorMOG2 bg_sub(history,varThreshold,false);
     
     Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
-    namedWindow("Frame",1);
-    namedWindow("Mask",1);
-    namedWindow("Closing(Frame & Mask)",1);
+    //namedWindow("Frame",1);
+    //namedWindow("Mask",1);
+    //namedWindow("Closing(Frame & Mask)",1);
+    double t = (double)getTickCount();
     for(;;)
     {
-        Mat frame, bg_mask, frame_masked, cl_mask;
+        Mat frame, bg_mask, frame_masked, cl_mask, op_mask;
         cap >> frame; // get a new frame from camera
         
         if (crop)
         	frame = frame.colRange(160,1120);
 
+        //resize(frame, frame, Size(), 0.5, 0.5);
 
 
-        /// Separate the image in 3 places ( B, G and R )
-		vector<Mat> bgr_planes, bgr_eq;
-		split(frame, bgr_planes );
+
+        //cvtColor(frame, frame, CV_BGR2GRAY);
+        GaussianBlur(frame, frame, Size(5,5), 1.5, 1.5);
+        
+        // Execute background subtraction and get mask
+        bg_sub(frame,bg_mask);
+        // Apply opening + closing operation to the mask
+        morphologyEx(bg_mask, bg_mask, CV_MOP_OPEN, element, Point(2,2), 2);
+        morphologyEx(bg_mask, bg_mask, CV_MOP_CLOSE, element, Point(2,2), 4);
+        //morphologyEx(cl_mask, op_mask, CV_MOP_OPEN, element, Point(2,2), 3);
+        // mask original frame
+        frame.copyTo(frame_masked,bg_mask);
+        
+
+        int curr_frame = cap.get(CV_CAP_PROP_POS_FRAMES);
+        std::stringstream ss;
+        ss << "frame " << curr_frame;
+        std::string fns = ss.str();
+		
+        if (curr_frame > 6390)
+        {
+        	t = ((double)getTickCount() - t)/getTickFrequency();
+
+        	std::cout << "Time elapsed: " << t << " secs" << std::endl;
+        	return 1;
+        }
+        /*
+        rectangle(frame,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
+		rectangle(bg_mask,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
+		rectangle(frame_masked,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
+
+        putText(frame,fns.c_str(),cv::Point(25,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
+		putText(bg_mask,fns.c_str(),cv::Point(25,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
+		putText(frame_masked,fns.c_str(),cv::Point(25,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
+		*/
+
+        //bgsub1.getBackgroundImage(bg1);
+		
+
+		//std::cout << fns << std::endl;
+
+		// Save frames
+		if(std::find(frames_to_save.begin(), frames_to_save.end(), curr_frame)!=frames_to_save.end())
+		{
+			std::cout << fns << std::endl;
+			std::stringstream ln1, ln2, ln3, com;
+
+			ln1 << "f" << curr_frame;
+			ln2 << ln1.str();
+			ln3 << ln1.str();
+
+			com << "h" << history << "v" << varThreshold << "oc2.jpg";
+
+			ln1 << ".jpg";
+			ln2 << "_b" << com.str();
+			ln3 << "_m" << com.str();
+
+			//imwrite(ln1.str().c_str(),frame);
+			imwrite(ln2.str().c_str(),bg_mask);
+			imwrite(ln3.str().c_str(),frame_masked);
+		}
+        
+        //imshow("Frame", frame);
+        //imshow("Mask", bg_mask);
+        //imshow("Closing(Frame & Mask)", frame_masked);
+        
+		// wait key statements
+		/*
+        key = (char) waitKey(5);
+        //std::cout << "key " << key << std::endl;
+        if (key == 112)
+        {
+            while(key < 0 || key == 112)
+            {
+                key = waitKey(5);
+            }
+        }        
+        else if(key >= 0)
+        {
+            break;
+        }
+        */
+    }
+    // the camera will be deinitialized automatically in VideoCapture destructor
+    return 0;
+}
+
+void show_cap_info(VideoCapture cap, std::string input)
+{
+	Size S = Size((int) cap.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
+	                      (int) cap.get(CV_CAP_PROP_FRAME_HEIGHT));
+
+	        std::cout << "Opening file " << input << std::endl;
+	        std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
+	             << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
+}
+
+/// Separate the image in 3 places ( B, G and R )
+		//vector<Mat> bgr_planes, bgr_eq;
+		//split(frame, bgr_planes );
+
 		/*
 		equalizeHist(bgr_planes[0],bgr_planes[0]);
 		equalizeHist(bgr_planes[1],bgr_planes[1]);
 		equalizeHist(bgr_planes[2],bgr_planes[2]);
 
 		merge(bgr_planes, frame);
-		*/
+
 		/// Establish the number of bins
 		  int histSize = 256;
 
@@ -68,7 +175,6 @@ int main(int argc, char** argv)
 
 		  Mat b_hist, g_hist, r_hist;
 
-		/*
 		  /// Compute the histograms:
 		  calcHist( &bgr_planes[0], 1, 0, Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
 		  calcHist( &bgr_planes[1], 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
@@ -103,54 +209,3 @@ int main(int argc, char** argv)
 		  namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
 		  imshow("calcHist Demo", histImage );
 		*/
-        //cvtColor(frame, frame, CV_BGR2GRAY);
-        GaussianBlur(frame, frame, Size(5,5), 1.5, 1.5);
-        
-        bg_sub(frame,bg_mask);
-        
-        morphologyEx(bg_mask, cl_mask, CV_MOP_CLOSE, element, Point(2,2), 3);
-        frame.copyTo(frame_masked,cl_mask);
-        
-        std::stringstream ss;
-		
-        rectangle(frame,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
-		rectangle(bg_mask,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
-		rectangle(frame_masked,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
-		
-        ss << "frame " << cap.get(CV_CAP_PROP_POS_FRAMES);
-        std::string fns = ss.str();
-
-        putText(frame,fns.c_str(),cv::Point(25,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
-		putText(bg_mask,fns.c_str(),cv::Point(25,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
-		putText(frame_masked,fns.c_str(),cv::Point(25,20),FONT_HERSHEY_SIMPLEX,0.5,cv::Scalar(0,0,0));
-        //bgsub1.getBackgroundImage(bg1);
-		
-		if(cap.get(CV_CAP_PROP_POS_FRAMES) == 80)
-		{
-			imwrite("580f.jpg",frame);
-			imwrite("580bgm.jpg",bg_mask);
-			imwrite("580fg.jpg",frame_masked);
-		}
-        
-        imshow("Frame", frame);
-        imshow("Mask", bg_mask);
-        imshow("Closing(Frame & Mask)", frame_masked);
-        
-        key = (char) waitKey(10);
-        //std::cout << "key " << key << std::endl;
-        if (key == 112)
-        {
-            while(key < 0 || key == 112)
-            {
-                key = waitKey(10);
-            }
-        }        
-        else if(key >= 0)
-        {
-            break;
-        }
-        //if(waitKey(30) == )
-    }
-    // the camera will be deinitialized automatically in VideoCapture destructor
-    return 0;
-}
