@@ -4,12 +4,12 @@
 
 using namespace cv;
 void show_cap_info(VideoCapture cap, std::string);
+void morph_ops(InputArray src, OutputArray dst);
 
 int main(int argc, char** argv)
 {
     int key = 0, crop = 0;
-    int init_tick, final_tick, total_tick;
-    float final_secs;
+
     VideoCapture cap;
     std::string input;
 
@@ -26,7 +26,10 @@ int main(int argc, char** argv)
     cap = VideoCapture(input);
 
     if(!cap.isOpened())  // check if we succeeded
+    {
+    	std::cout << "Error opening " << input << std::endl;
     	return -1;
+    }
 
     show_cap_info(cap,input);
 
@@ -40,10 +43,10 @@ int main(int argc, char** argv)
     
     BackgroundSubtractorMOG2 bg_sub(history,varThreshold,false);
     
-    Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
+    //Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
     //namedWindow("Frame",1);
     //namedWindow("Mask",1);
-    //namedWindow("Closing(Frame & Mask)",1);
+    namedWindow("Closing(Frame & Mask)",1);
     double t = (double)getTickCount();
     for(;;)
     {
@@ -53,18 +56,16 @@ int main(int argc, char** argv)
         if (crop)
         	frame = frame.colRange(160,1120);
 
-        //resize(frame, frame, Size(), 0.5, 0.5);
 
-
-
-        //cvtColor(frame, frame, CV_BGR2GRAY);
         GaussianBlur(frame, frame, Size(5,5), 1.5, 1.5);
         
         // Execute background subtraction and get mask
         bg_sub(frame,bg_mask);
         // Apply opening + closing operation to the mask
-        morphologyEx(bg_mask, bg_mask, CV_MOP_OPEN, element, Point(2,2), 2);
-        morphologyEx(bg_mask, bg_mask, CV_MOP_CLOSE, element, Point(2,2), 4);
+
+        morph_ops(bg_mask, bg_mask);
+        //morphologyEx(bg_mask, bg_mask, CV_MOP_OPEN, element, Point(2,2),2);
+        //morphologyEx(bg_mask, bg_mask, CV_MOP_CLOSE, element, Point(2,2), 5);
         //morphologyEx(cl_mask, op_mask, CV_MOP_OPEN, element, Point(2,2), 3);
         // mask original frame
         frame.copyTo(frame_masked,bg_mask);
@@ -75,7 +76,7 @@ int main(int argc, char** argv)
         ss << "frame " << curr_frame;
         std::string fns = ss.str();
 		
-        if (curr_frame > 6390)
+        if (curr_frame > 1000)
         {
         	t = ((double)getTickCount() - t)/getTickFrequency();
 
@@ -98,6 +99,7 @@ int main(int argc, char** argv)
 		//std::cout << fns << std::endl;
 
 		// Save frames
+        /*
 		if(std::find(frames_to_save.begin(), frames_to_save.end(), curr_frame)!=frames_to_save.end())
 		{
 			std::cout << fns << std::endl;
@@ -117,13 +119,13 @@ int main(int argc, char** argv)
 			imwrite(ln2.str().c_str(),bg_mask);
 			imwrite(ln3.str().c_str(),frame_masked);
 		}
-        
+        */
         //imshow("Frame", frame);
         //imshow("Mask", bg_mask);
-        //imshow("Closing(Frame & Mask)", frame_masked);
+        imshow("Closing(Frame & Mask)", frame_masked);
         
 		// wait key statements
-		/*
+
         key = (char) waitKey(5);
         //std::cout << "key " << key << std::endl;
         if (key == 112)
@@ -137,7 +139,7 @@ int main(int argc, char** argv)
         {
             break;
         }
-        */
+
     }
     // the camera will be deinitialized automatically in VideoCapture destructor
     return 0;
@@ -151,6 +153,15 @@ void show_cap_info(VideoCapture cap, std::string input)
 	        std::cout << "Opening file " << input << std::endl;
 	        std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
 	             << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
+}
+
+void morph_ops(InputArray src, OutputArray dst)
+{
+	Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
+	Mat temp;
+
+	morphologyEx(src, temp, CV_MOP_OPEN, element, Point(2,2),2);
+	morphologyEx(temp, dst, CV_MOP_CLOSE, element, Point(2,2), 5);
 }
 
 /// Separate the image in 3 places ( B, G and R )
