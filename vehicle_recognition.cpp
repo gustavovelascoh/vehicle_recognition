@@ -33,11 +33,13 @@ int main(int argc, char** argv)
 
     show_cap_info(cap,input);
 
-    static const int arr[] = {2160, 2260, 4380, 6170, 6390};
+    //static const int arr[] = {2160, 2260, 4380, 6170, 6390};
+    static const int arr[] = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000};
     std::vector<int> frames_to_save (arr, arr + sizeof(arr) / sizeof(arr[0]) );
+    int save_frames = 1;
     
     int history =  500;
-    float varThreshold = 21;
+    float varThreshold = 9;
     
     std::stringstream ln1, ln2, ln3;
     
@@ -46,7 +48,7 @@ int main(int argc, char** argv)
     //Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
     //namedWindow("Frame",1);
     //namedWindow("Mask",1);
-    namedWindow("Closing(Frame & Mask)",1);
+    //namedWindow("Closing(Frame & Mask)",1);
     double t = (double)getTickCount();
     for(;;)
     {
@@ -76,7 +78,7 @@ int main(int argc, char** argv)
         ss << "frame " << curr_frame;
         std::string fns = ss.str();
 		
-        if (curr_frame > 1000)
+        if (curr_frame > 7001)
         {
         	t = ((double)getTickCount() - t)/getTickFrequency();
 
@@ -99,30 +101,32 @@ int main(int argc, char** argv)
 		//std::cout << fns << std::endl;
 
 		// Save frames
-        /*
-		if(std::find(frames_to_save.begin(), frames_to_save.end(), curr_frame)!=frames_to_save.end())
-		{
-			std::cout << fns << std::endl;
-			std::stringstream ln1, ln2, ln3, com;
+        if (save_frames)
+        {
+			if(std::find(frames_to_save.begin(), frames_to_save.end(), curr_frame)!=frames_to_save.end())
+			{
+				std::cout << fns << std::endl;
+				std::stringstream ln1, ln2, ln3, com;
 
-			ln1 << "f" << curr_frame;
-			ln2 << ln1.str();
-			ln3 << ln1.str();
+				ln1 << "f" << curr_frame;
+				//ln2 << ln1.str();
+				//ln3 << ln1.str();
 
-			com << "h" << history << "v" << varThreshold << "oc2.jpg";
+				//com << "h" << history << "v" << varThreshold << "oc2.jpg";
+				ln1 << "fm3.jpg";
 
-			ln1 << ".jpg";
-			ln2 << "_b" << com.str();
-			ln3 << "_m" << com.str();
+				//ln1 << ".jpg";
+				//ln2 << "_b" << com.str();
+				//ln3 << "_m" << com.str();
 
-			//imwrite(ln1.str().c_str(),frame);
-			imwrite(ln2.str().c_str(),bg_mask);
-			imwrite(ln3.str().c_str(),frame_masked);
-		}
-        */
+				imwrite(ln1.str().c_str(),frame_masked);
+				//imwrite(ln2.str().c_str(),bg_mask);
+				//imwrite(ln3.str().c_str(),frame_masked);
+			}
+        }
         //imshow("Frame", frame);
         //imshow("Mask", bg_mask);
-        imshow("Closing(Frame & Mask)", frame_masked);
+        //imshow("Closing(Frame & Mask)", frame_masked);
         
 		// wait key statements
 
@@ -161,7 +165,7 @@ void morph_ops(InputArray src, OutputArray dst)
 	Mat temp;
 
 	morphologyEx(src, temp, CV_MOP_OPEN, element, Point(2,2),2);
-	morphologyEx(temp, dst, CV_MOP_CLOSE, element, Point(2,2), 5);
+	morphologyEx(temp, dst, CV_MOP_CLOSE, element, Point(2,2), 10);
 }
 
 /// Separate the image in 3 places ( B, G and R )
