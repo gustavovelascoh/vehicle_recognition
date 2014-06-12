@@ -1,6 +1,7 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/video/video.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
+#include "Bgsub.h"
 
 using namespace cv;
 void show_cap_info(VideoCapture cap, std::string);
@@ -43,8 +44,10 @@ int main(int argc, char** argv)
     
     std::stringstream ln1, ln2, ln3;
     
-    BackgroundSubtractorMOG2 bg_sub(history,varThreshold,true);
+    //BackgroundSubtractorMOG2 bg_sub(history,varThreshold,true);
+    Bg_sub bg_sub(history,varThreshold,true,0.1);
     
+    //bg_sub.fTau = 0.1;
     //bg_sub.BackgroundSubtractorMOG2::fTau = 0.3;
     //,BackgroundSubtractorMOG2::fTau = 0.3
 
@@ -116,7 +119,7 @@ int main(int argc, char** argv)
 				//ln3 << ln1.str();
 
 				//com << "h" << history << "v" << varThreshold << "oc2.jpg";
-				ln1 << "sh05.jpg";
+				ln1 << "sh01.jpg";
 
 				//ln1 << ".jpg";
 				//ln2 << "_b" << com.str();
