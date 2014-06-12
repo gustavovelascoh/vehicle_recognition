@@ -38,16 +38,19 @@ int main(int argc, char** argv)
     std::vector<int> frames_to_save (arr, arr + sizeof(arr) / sizeof(arr[0]) );
     int save_frames = 1;
     
-    int history =  500;
+    int history =  400;
     float varThreshold = 9;
     
     std::stringstream ln1, ln2, ln3;
     
-    BackgroundSubtractorMOG2 bg_sub(history,varThreshold,false);
+    BackgroundSubtractorMOG2 bg_sub(history,varThreshold,true);
     
+    //bg_sub.BackgroundSubtractorMOG2::fTau = 0.3;
+    //,BackgroundSubtractorMOG2::fTau = 0.3
+
     //Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
-    //namedWindow("Frame",1);
-    //namedWindow("Mask",1);
+    namedWindow("Frame",1);
+    namedWindow("Mask",1);
     //namedWindow("Closing(Frame & Mask)",1);
     double t = (double)getTickCount();
     for(;;)
@@ -65,7 +68,7 @@ int main(int argc, char** argv)
         bg_sub(frame,bg_mask);
         // Apply opening + closing operation to the mask
 
-        morph_ops(bg_mask, bg_mask);
+        //morph_ops(bg_mask, bg_mask);
         //morphologyEx(bg_mask, bg_mask, CV_MOP_OPEN, element, Point(2,2),2);
         //morphologyEx(bg_mask, bg_mask, CV_MOP_CLOSE, element, Point(2,2), 5);
         //morphologyEx(cl_mask, op_mask, CV_MOP_OPEN, element, Point(2,2), 3);
@@ -113,19 +116,19 @@ int main(int argc, char** argv)
 				//ln3 << ln1.str();
 
 				//com << "h" << history << "v" << varThreshold << "oc2.jpg";
-				ln1 << "fm3.jpg";
+				ln1 << "sh05.jpg";
 
 				//ln1 << ".jpg";
 				//ln2 << "_b" << com.str();
 				//ln3 << "_m" << com.str();
 
-				imwrite(ln1.str().c_str(),frame_masked);
-				//imwrite(ln2.str().c_str(),bg_mask);
+				//imwrite(ln1.str().c_str(),frame_masked);
+				imwrite(ln1.str().c_str(),bg_mask);
 				//imwrite(ln3.str().c_str(),frame_masked);
 			}
         }
-        //imshow("Frame", frame);
-        //imshow("Mask", bg_mask);
+        imshow("Frame", frame);
+        imshow("Mask", bg_mask);
         //imshow("Closing(Frame & Mask)", frame_masked);
         
 		// wait key statements
