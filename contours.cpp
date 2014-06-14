@@ -52,11 +52,27 @@ void thresh_callback(int, void* )
   imshow( "Contours", drawing );
 }
 
+int print_info()
+{
+	cout << "Usage:" << endl;
+	cout << "contours filename" << endl;
+
+	return 1;
+}
+
 /** @function main */
 int main( int argc, char** argv )
 {
-  /// Load source image and convert it to gray
-  src = imread("../img/contours/f5000fm.jpg");
+	std::string input;
+
+	if (argc < 2)
+	{
+		print_info();
+	}
+
+	input = argv[1];
+
+	src = imread(input);
 
   /// Convert image to gray and blur it
     cvtColor( src, src_gray, CV_BGR2GRAY );
