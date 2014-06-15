@@ -1,6 +1,7 @@
 media_src/*
 build/*
 img/*
+bin/*
 Debug/*
 .cproject
 .project
