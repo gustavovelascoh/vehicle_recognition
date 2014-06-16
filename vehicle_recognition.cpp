@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 
     if (argc < 2)
     {
-        input = "./media_src/the_video.mp4";
+        input = "../media_src/the_video.mp4";
         crop = 1;
     }
     else
@@ -34,47 +34,70 @@ int main(int argc, char** argv)
 
     show_cap_info(cap,input);
 
+    std::cout << "OpenCV ver: " << CV_VERSION <<  std::endl;
+    /* ---------- Frame saving ---------- */
+
     //static const int arr[] = {2160, 2260, 4380, 6170, 6390};
-    static const int arr[] = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000};
+    static const int arr[] = {100, 200, 300, 400, 500};
+    //static const int arr[] = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000};
     std::vector<int> frames_to_save (arr, arr + sizeof(arr) / sizeof(arr[0]) );
     int save_frames = 1;
     
+    /* ---------- Video save ---------- */
+
+    Size S = Size((int) cap.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
+                      (int) cap.get(CV_CAP_PROP_FRAME_HEIGHT));
+    const string NAME = "video_mask.avi";   // Form the new name with container
+    int ex = static_cast<int>(cap.get(CV_CAP_PROP_FOURCC));
+    VideoWriter outputVideo;
+    //outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), S, true);
+    outputVideo.open(NAME, -1, cap.get(CV_CAP_PROP_FPS), S, true);
+
+    char EXT[] = {(char)(ex & 0XFF) , (char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),(char)((ex & 0XFF000000) >> 24), 0};
+
+    std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
+             << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
+    std::cout << "Input codec type: " << EXT << std::endl;
+
+    /* ---------- Background extractor ---------- */
     int history =  400;
-    float varThreshold = 9;
-    
-    std::stringstream ln1, ln2, ln3;
+    float varThreshold = 12;
     
     //BackgroundSubtractorMOG2 bg_sub(history,varThreshold,true);
-    Bg_sub bg_sub(history,varThreshold,true,0.1);
+    Bg_sub bg_sub(history,varThreshold,true,0.5);
     
     //bg_sub.fTau = 0.1;
+
+    std::cout << "fTau = " << bg_sub.get_fTau() << std::endl;
+    std::cout << "history = " << bg_sub.get_history() << std::endl;
     //bg_sub.BackgroundSubtractorMOG2::fTau = 0.3;
     //,BackgroundSubtractorMOG2::fTau = 0.3
 
+    /* ----------  ---------- */
+    std::stringstream ln1, ln2, ln3;
     //Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
     namedWindow("Frame",1);
     namedWindow("Mask",1);
     //namedWindow("Closing(Frame & Mask)",1);
     double t = (double)getTickCount();
+
+    //return 1;
     for(;;)
     {
-        Mat frame, bg_mask, frame_masked, cl_mask, op_mask;
+        Mat frame,  bg_mask, frame_masked;//, cl_mask, op_mask;
         cap >> frame; // get a new frame from camera
         
         if (crop)
         	frame = frame.colRange(160,1120);
+
+        //cvtColor(frame, frame, CV_BGR2YCrCb);
+        //cvtColor(frame, frame, CV_BGR2GRAY);
 
 
         GaussianBlur(frame, frame, Size(5,5), 1.5, 1.5);
         
         // Execute background subtraction and get mask
         bg_sub(frame,bg_mask);
-        // Apply opening + closing operation to the mask
-
-        //morph_ops(bg_mask, bg_mask);
-        //morphologyEx(bg_mask, bg_mask, CV_MOP_OPEN, element, Point(2,2),2);
-        //morphologyEx(bg_mask, bg_mask, CV_MOP_CLOSE, element, Point(2,2), 5);
-        //morphologyEx(cl_mask, op_mask, CV_MOP_OPEN, element, Point(2,2), 3);
         // mask original frame
         frame.copyTo(frame_masked,bg_mask);
         
@@ -84,7 +107,7 @@ int main(int argc, char** argv)
         ss << "frame " << curr_frame;
         std::string fns = ss.str();
 		
-        if (curr_frame > 7001)
+        if (curr_frame > 501)
         {
         	t = ((double)getTickCount() - t)/getTickFrequency();
 
@@ -119,7 +142,7 @@ int main(int argc, char** argv)
 				//ln3 << ln1.str();
 
 				//com << "h" << history << "v" << varThreshold << "oc2.jpg";
-				ln1 << "sh01.jpg";
+				ln1 << "sh05v12.jpg";
 
 				//ln1 << ".jpg";
 				//ln2 << "_b" << com.str();
@@ -130,6 +153,10 @@ int main(int argc, char** argv)
 				//imwrite(ln3.str().c_str(),frame_masked);
 			}
         }
+
+        // save video
+        outputVideo << bg_mask;
+
         imshow("Frame", frame);
         imshow("Mask", bg_mask);
         //imshow("Closing(Frame & Mask)", frame_masked);
