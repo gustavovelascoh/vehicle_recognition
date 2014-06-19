@@ -41,23 +41,55 @@ int main(int argc, char** argv)
     static const int arr[] = {100, 200, 300, 400, 500};
     //static const int arr[] = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000};
     std::vector<int> frames_to_save (arr, arr + sizeof(arr) / sizeof(arr[0]) );
-    int save_frames = 1;
+    int save_frames = 0;
+    int gui = 1;
     
     /* ---------- Video save ---------- */
 
     Size S = Size((int) cap.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
                       (int) cap.get(CV_CAP_PROP_FRAME_HEIGHT));
     const string NAME = "video_mask.avi";   // Form the new name with container
-    int ex = static_cast<int>(cap.get(CV_CAP_PROP_FOURCC));
+    int ex;
     VideoWriter outputVideo;
-    //outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), S, true);
-    outputVideo.open(NAME, -1, cap.get(CV_CAP_PROP_FPS), S, true);
 
-    char EXT[] = {(char)(ex & 0XFF) , (char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),(char)((ex & 0XFF000000) >> 24), 0};
+    //ex = static_cast<int>(cap.get(CV_CAP_PROP_FOURCC));
+    //ex = CV_FOURCC('M','J','P','G');
+    //ex = CV_FOURCC('P','I','M','1');
+    //ex = CV_FOURCC('A','E','M','I');
+    //ex = CV_FOURCC('X','2','6','4');
+    //ex = CV_FOURCC('D','A','V','C');
+    //ex = CV_FOURCC('F','M','P','4');
+    //ex = CV_FOURCC('D', 'I', 'V', '3');
+    //ex = CV_FOURCC('M', 'P', '4', '2');
+    //ex = CV_FOURCC('D', 'I', 'V', 'X');
+    //ex = CV_FOURCC('I', '2', '6', '3');// OpenCV Error: Unsupported format or combination of formats
+    ex = CV_FOURCC('M', 'P', 'E', 'G');
+    //ex = CV_FOURCC('D', 'I', 'V', '3');
 
-    std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
-             << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
-    std::cout << "Input codec type: " << EXT << std::endl;
+	char EXT[] = {(char)(ex & 0XFF) , (char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),(char)((ex & 0XFF000000) >> 24), 0};
+
+		std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
+				 << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
+		std::cout << "Input codec type: " << EXT << std::endl;
+
+    outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), Size(960,720), true);
+    //outputVideo.open(NAME, -1, cap.get(CV_CAP_PROP_FPS), S, false);
+
+    //outputVideo.open(NAME, CV_FOURCC('M','J','P','G'), cap.get(CV_CAP_PROP_FPS), S, true);
+    //outputVideo.open(NAME, CV_FOURCC('P','I','M','1'), cap.get(CV_CAP_PROP_FPS), S, true);
+    //outputVideo.open(NAME, CV_FOURCC('A','E','M','I'), cap.get(CV_CAP_PROP_FPS), S, true);
+
+    if (outputVideo.isOpened())
+    {
+    	std::cout << "Opened succesfully" << std::endl;
+    }
+    else
+    {
+    	std::cout << "NOT Opened succesfully" << std::endl;
+    }
+
+    /*
+
 
     /* ---------- Background extractor ---------- */
     int history =  400;
@@ -76,19 +108,25 @@ int main(int argc, char** argv)
     /* ----------  ---------- */
     std::stringstream ln1, ln2, ln3;
     //Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
-    namedWindow("Frame",1);
-    namedWindow("Mask",1);
+    if (gui)
+    {
+    	namedWindow("Frame",1);
+    	namedWindow("Mask",1);
+    }
     //namedWindow("Closing(Frame & Mask)",1);
     double t = (double)getTickCount();
 
     //return 1;
     for(;;)
     {
-        Mat frame,  bg_mask, frame_masked;//, cl_mask, op_mask;
+        Mat frame,  bg_mask, bg_mask_ns, frame_masked;//, cl_mask, op_mask;
         cap >> frame; // get a new frame from camera
         
         if (crop)
         	frame = frame.colRange(160,1120);
+
+        //Size Sf = frame.cols;
+        std::cout << frame.cols << "x" << frame.rows << std::endl;
 
         //cvtColor(frame, frame, CV_BGR2YCrCb);
         //cvtColor(frame, frame, CV_BGR2GRAY);
@@ -98,8 +136,11 @@ int main(int argc, char** argv)
         
         // Execute background subtraction and get mask
         bg_sub(frame,bg_mask);
+
+        threshold(bg_mask,bg_mask_ns,200,255,0);
+
         // mask original frame
-        frame.copyTo(frame_masked,bg_mask);
+        frame.copyTo(frame_masked,bg_mask_ns);
         
 
         int curr_frame = cap.get(CV_CAP_PROP_POS_FRAMES);
@@ -152,29 +193,39 @@ int main(int argc, char** argv)
 				imwrite(ln1.str().c_str(),bg_mask);
 				//imwrite(ln3.str().c_str(),frame_masked);
 			}
+        }else
+        {
+        	std::cout << fns << std::endl;
         }
 
         // save video
-        outputVideo << bg_mask;
+        outputVideo.write(frame_masked);
+        //outputVideo << bg_mask;
 
-        imshow("Frame", frame);
-        imshow("Mask", bg_mask);
+        // ------ Show images ------
+        if (gui)
+        {
+			imshow("Frame", frame);
+			imshow("Mask", bg_mask);
+
+
         //imshow("Closing(Frame & Mask)", frame_masked);
         
 		// wait key statements
 
-        key = (char) waitKey(5);
-        //std::cout << "key " << key << std::endl;
-        if (key == 112)
-        {
-            while(key < 0 || key == 112)
-            {
-                key = waitKey(5);
-            }
-        }        
-        else if(key >= 0)
-        {
-            break;
+			key = (char) waitKey(5);
+			//std::cout << "key " << key << std::endl;
+			if (key == 112)
+			{
+				while(key < 0 || key == 112)
+				{
+					key = waitKey(5);
+				}
+			}
+			else if(key >= 0)
+			{
+				break;
+			}
         }
 
     }
