@@ -17,3 +17,6 @@ target_link_libraries( ../bin/contours ${OpenCV_LIBS} )
 
 add_executable( ../bin/test_contours src/test_contours.cpp )
 target_link_libraries( ../bin/test_contours ${OpenCV_LIBS} )
+
+add_executable( ../bin/frame_saver src/frame_saver.cpp )
+target_link_libraries( ../bin/frame_saver ${OpenCV_LIBS} )
