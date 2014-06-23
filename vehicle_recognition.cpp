@@ -10,6 +10,10 @@ void morph_ops(InputArray src, OutputArray dst);
 int main(int argc, char** argv)
 {
     int key = 0, crop = 0;
+    int save_frames = 0;
+    int gui = 0;
+    int save_video = 1;
+    const string NAME = "mask_morph.avi";   // Form the new name with container
 
     VideoCapture cap;
     std::string input;
@@ -41,51 +45,54 @@ int main(int argc, char** argv)
     static const int arr[] = {100, 200, 300, 400, 500};
     //static const int arr[] = {500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000};
     std::vector<int> frames_to_save (arr, arr + sizeof(arr) / sizeof(arr[0]) );
-    int save_frames = 0;
-    int gui = 1;
     
-    /* ---------- Video save ---------- */
 
-    Size S = Size((int) cap.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
-                      (int) cap.get(CV_CAP_PROP_FRAME_HEIGHT));
-    const string NAME = "video_mask.avi";   // Form the new name with container
-    int ex;
     VideoWriter outputVideo;
-
-    //ex = static_cast<int>(cap.get(CV_CAP_PROP_FOURCC));
-    //ex = CV_FOURCC('M','J','P','G');
-    //ex = CV_FOURCC('P','I','M','1');
-    //ex = CV_FOURCC('A','E','M','I');
-    //ex = CV_FOURCC('X','2','6','4');
-    //ex = CV_FOURCC('D','A','V','C');
-    //ex = CV_FOURCC('F','M','P','4');
-    //ex = CV_FOURCC('D', 'I', 'V', '3');
-    //ex = CV_FOURCC('M', 'P', '4', '2');
-    //ex = CV_FOURCC('D', 'I', 'V', 'X');
-    //ex = CV_FOURCC('I', '2', '6', '3');// OpenCV Error: Unsupported format or combination of formats
-    ex = CV_FOURCC('M', 'P', 'E', 'G');
-    //ex = CV_FOURCC('D', 'I', 'V', '3');
-
-	char EXT[] = {(char)(ex & 0XFF) , (char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),(char)((ex & 0XFF000000) >> 24), 0};
-
-		std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
-				 << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
-		std::cout << "Input codec type: " << EXT << std::endl;
-
-    outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), Size(960,720), true);
-    //outputVideo.open(NAME, -1, cap.get(CV_CAP_PROP_FPS), S, false);
-
-    //outputVideo.open(NAME, CV_FOURCC('M','J','P','G'), cap.get(CV_CAP_PROP_FPS), S, true);
-    //outputVideo.open(NAME, CV_FOURCC('P','I','M','1'), cap.get(CV_CAP_PROP_FPS), S, true);
-    //outputVideo.open(NAME, CV_FOURCC('A','E','M','I'), cap.get(CV_CAP_PROP_FPS), S, true);
-
-    if (outputVideo.isOpened())
+    /* ---------- Video save ---------- */
+    if (save_video)
     {
-    	std::cout << "Opened succesfully" << std::endl;
-    }
-    else
-    {
-    	std::cout << "NOT Opened succesfully" << std::endl;
+		Size S = Size((int) cap.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
+						  (int) cap.get(CV_CAP_PROP_FRAME_HEIGHT));
+		//const string NAME = "mask_morph.avi";   // Form the new name with container
+		int ex;
+		//VideoWriter outputVideo;
+
+		//ex = static_cast<int>(cap.get(CV_CAP_PROP_FOURCC));
+		//ex = CV_FOURCC('M','J','P','G');
+		//ex = CV_FOURCC('P','I','M','1');
+		//ex = CV_FOURCC('A','E','M','I');
+		//ex = CV_FOURCC('X','2','6','4');
+		//ex = CV_FOURCC('D','A','V','C');
+		//ex = CV_FOURCC('F','M','P','4');
+		//ex = CV_FOURCC('D', 'I', 'V', '3');
+		//ex = CV_FOURCC('M', 'P', '4', '2');
+		//ex = CV_FOURCC('D', 'I', 'V', 'X');
+		//ex = CV_FOURCC('I', '2', '6', '3');// OpenCV Error: Unsupported format or combination of formats
+		ex = CV_FOURCC('M', 'P', 'E', 'G');
+		//ex = CV_FOURCC('D', 'I', 'V', '3');
+
+		char EXT[] = {(char)(ex & 0XFF) , (char)((ex & 0XFF00) >> 8),(char)((ex & 0XFF0000) >> 16),(char)((ex & 0XFF000000) >> 24), 0};
+
+			std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
+					 << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
+			std::cout << "Input codec type: " << EXT << std::endl;
+
+		//outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), Size(960,720), true);
+		outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), Size(960,720), false);
+		//outputVideo.open(NAME, -1, cap.get(CV_CAP_PROP_FPS), S, false);
+
+		//outputVideo.open(NAME, CV_FOURCC('M','J','P','G'), cap.get(CV_CAP_PROP_FPS), S, true);
+		//outputVideo.open(NAME, CV_FOURCC('P','I','M','1'), cap.get(CV_CAP_PROP_FPS), S, true);
+		//outputVideo.open(NAME, CV_FOURCC('A','E','M','I'), cap.get(CV_CAP_PROP_FPS), S, true);
+
+		if (outputVideo.isOpened())
+		{
+			std::cout << "Opened succesfully" << std::endl;
+		}
+		else
+		{
+			std::cout << "NOT Opened succesfully" << std::endl;
+		}
     }
 
     /*
@@ -115,46 +122,56 @@ int main(int argc, char** argv)
     }
     //namedWindow("Closing(Frame & Mask)",1);
     double t = (double)getTickCount();
-
+    double tp, t_max=0.0, t_min = 10.0, t_avg=0.0;
+    Vector<double_t> ex_ts;
     //return 1;
     for(;;)
     {
-        Mat frame,  bg_mask, bg_mask_ns, frame_masked;//, cl_mask, op_mask;
+    	tp = (double)getTickCount();
+        Mat frame,  bg_mask, bg_mask_ns, frame_masked, mask_morph, mask_rgb;//, cl_mask, op_mask;
         cap >> frame; // get a new frame from camera
         
         if (crop)
         	frame = frame.colRange(160,1120);
 
         //Size Sf = frame.cols;
-        std::cout << frame.cols << "x" << frame.rows << std::endl;
+        //std::cout << frame.cols << "x" << frame.rows << std::endl;
 
         //cvtColor(frame, frame, CV_BGR2YCrCb);
-        //cvtColor(frame, frame, CV_BGR2GRAY);
+        cvtColor(frame, frame, CV_BGR2GRAY);
 
 
         GaussianBlur(frame, frame, Size(5,5), 1.5, 1.5);
         
         // Execute background subtraction and get mask
         bg_sub(frame,bg_mask);
-
+        // Apply thresholding to omit shadow
         threshold(bg_mask,bg_mask_ns,200,255,0);
 
+        morph_ops(bg_mask_ns,mask_morph);
+
         // mask original frame
-        frame.copyTo(frame_masked,bg_mask_ns);
+        frame.copyTo(frame_masked,mask_morph);
         
+        tp = ((double)getTickCount() - tp)/getTickFrequency();
+        ex_ts.push_back(tp);
+
+        if (tp > t_max)
+        	t_max = tp;
+
+        if (tp < t_min)
+        	t_min = tp;
+
+        t_avg += tp;
 
         int curr_frame = cap.get(CV_CAP_PROP_POS_FRAMES);
         std::stringstream ss;
-        ss << "frame " << curr_frame;
-        std::string fns = ss.str();
+		ss << "frame " << curr_frame;
+		std::string fns = ss.str();
 		
-        if (curr_frame > 501)
-        {
-        	t = ((double)getTickCount() - t)/getTickFrequency();
 
-        	std::cout << "Time elapsed: " << t << " secs" << std::endl;
-        	return 1;
-        }
+
+
         /*
         rectangle(frame,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
 		rectangle(bg_mask,cv::Point(10,5),cv::Point(120,25),cv::Scalar(255,255,255,-1),CV_FILLED);
@@ -175,6 +192,9 @@ int main(int argc, char** argv)
         {
 			if(std::find(frames_to_save.begin(), frames_to_save.end(), curr_frame)!=frames_to_save.end())
 			{
+
+
+
 				std::cout << fns << std::endl;
 				std::stringstream ln1, ln2, ln3, com;
 
@@ -195,18 +215,26 @@ int main(int argc, char** argv)
 			}
         }else
         {
-        	std::cout << fns << std::endl;
+        	/*
+        	if (curr_frame % 10)
+        		std::cout << fns << '\r';
+        	*/
+        	std::cout << fns << ": " << tp << "s" << std::endl;
         }
 
         // save video
-        outputVideo.write(frame_masked);
+        if (save_video)
+        {
+        	//cvtColor(mask_morph,mask_rgb,CV_GRAY2RGB);
+        	outputVideo.write(mask_morph);
+        }
         //outputVideo << bg_mask;
 
         // ------ Show images ------
         if (gui)
         {
 			imshow("Frame", frame);
-			imshow("Mask", bg_mask);
+			imshow("Mask", frame_masked);
 
 
         //imshow("Closing(Frame & Mask)", frame_masked);
@@ -228,6 +256,15 @@ int main(int argc, char** argv)
 			}
         }
 
+        if (curr_frame >= cap.get(CV_CAP_PROP_FRAME_COUNT))
+		{
+			t = ((double)getTickCount() - t)/getTickFrequency();
+			std::cout << std::endl;
+			std::cout << "Time elapsed: " << t << " secs" << std::endl;
+			std::cout << "Sum of tp: " << t_avg << ". " << t_min << "/" << t_avg/curr_frame << "/" << t_max << std::endl;
+			return 0;
+		}
+
     }
     // the camera will be deinitialized automatically in VideoCapture destructor
     return 0;
@@ -239,17 +276,17 @@ void show_cap_info(VideoCapture cap, std::string input)
 	                      (int) cap.get(CV_CAP_PROP_FRAME_HEIGHT));
 
 	        std::cout << "Opening file " << input << std::endl;
-	        std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height
-	             << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
+	        std::cout << "Input frame resolution: Width=" << S.width << "  Height=" << S.height << std::endl;
+	        std::cout << "#frames: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << ", fps: " << cap.get(CV_CAP_PROP_FPS) << std::endl;
 }
 
 void morph_ops(InputArray src, OutputArray dst)
 {
-	Mat element = getStructuringElement(MORPH_ELLIPSE, Size(5,5),Point(2,2));
+	Mat element = getStructuringElement(MORPH_ELLIPSE, Size(3,3),Point(1,1));
 	Mat temp;
 
-	morphologyEx(src, temp, CV_MOP_OPEN, element, Point(2,2),2);
-	morphologyEx(temp, dst, CV_MOP_CLOSE, element, Point(2,2), 10);
+	morphologyEx(src, temp, CV_MOP_OPEN, element, Point(1,1),3);
+	morphologyEx(temp, dst, CV_MOP_CLOSE, element, Point(1,1), 4);
 }
 
 /// Separate the image in 3 places ( B, G and R )
