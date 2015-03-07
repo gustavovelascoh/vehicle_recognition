@@ -17,9 +17,9 @@ int main(int argc, char** argv)
 {
     int key = 0, crop = 0;
     int save_frames = 0;
-    int gui = 1;
-    int save_video = 0, steps = 0;
-    const string NAME = "mask_morph.avi";   // Form the new name with container
+    int gui = 0;
+    int save_video = 1, steps = 0;
+    const string NAME = "contours.avi";   // Form the new name with container
 
     VideoCapture cap;
     std::string input;
@@ -92,8 +92,8 @@ int main(int argc, char** argv)
 					 << " of nr#: " << cap.get(CV_CAP_PROP_FRAME_COUNT) << std::endl;
 			std::cout << "Input codec type: " << EXT << std::endl;
 
-		//outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), Size(960,720), true);
-		outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), Size(960,720), false);
+		outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), Size(960,720), true);
+		//outputVideo.open(NAME, ex, cap.get(CV_CAP_PROP_FPS), Size(960,720), false);
 		//outputVideo.open(NAME, -1, cap.get(CV_CAP_PROP_FPS), S, false);
 
 		//outputVideo.open(NAME, CV_FOURCC('M','J','P','G'), cap.get(CV_CAP_PROP_FPS), S, true);
@@ -144,6 +144,44 @@ int main(int argc, char** argv)
     //Vector of contours
     vector<vector<Point> > objects;
     vector<vector<Point> > paths;
+    vector<vector<Point> > access;
+    vector<Point> N_S, S_N, E_W, W_E, int_area;
+
+    Point pt = Point(510,160);
+    E_W.push_back(pt);
+    int_area.push_back(pt);
+    pt.x = 960;
+    pt.y = 300;
+    E_W.push_back(pt);
+    access.push_back(E_W);
+
+	pt.x = 960;
+	pt.y = 380;
+	S_N.push_back(pt);
+	int_area.push_back(pt);
+	pt.x = 1;
+	pt.y = 580;
+	S_N.push_back(pt);
+	int_area.push_back(pt);
+	access.push_back(S_N);
+
+	pt.x = 1;
+	pt.y = 580;
+	W_E.push_back(pt);
+	pt.x = 1;
+	pt.y = 240;
+	W_E.push_back(pt);
+	int_area.push_back(pt);
+	access.push_back(W_E);
+
+    pt.x = 1;
+	pt.y = 240;
+	N_S.push_back(pt);
+    pt.x = 510;
+	pt.y = 160;
+	N_S.push_back(pt);
+	int_area.push_back(pt);
+	access.push_back(N_S);
 
     int obj_ind=0, path_ind=0;
 
@@ -178,7 +216,7 @@ int main(int argc, char** argv)
         // Execute background subtraction and get mask
         bg_sub(frame,bg_mask);
 
-        cout << "SUM: " << sum(bg_mask)[0] << endl;
+        //cout << "SUM: " << sum(bg_mask)[0] << endl;
 
         if (sum(bg_mask)[0] < 1)
         	bg_mask_1.copyTo(bg_mask);
@@ -215,7 +253,7 @@ int main(int argc, char** argv)
 		//threshold_output.copyTo(bg_mask_ns);
 		/// Find contours
 		findContours( threshold_output, contours_r, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-		cout << "contours #: " << contours_r.size() << endl;
+		//cout << "contours #: " << contours_r.size() << endl;
 
 		if ((contours_r.size() == 0) && ( curr_frame > 1))
 		{
@@ -239,14 +277,14 @@ int main(int argc, char** argv)
 				vector<Point> path;
 				if (objects.size() == 0)
 				{
-					cout << "size 0" << endl;
+					//cout << "size 0" << endl;
 					objects.push_back(contours_r[i]);
 					path.push_back(c_point);
 					paths.push_back(path);
 				}
 				else
 				{
-					cout << "size 1" << endl;
+					//cout << "size 1" << endl;
 					int s_ind = find_similar_contour(contours_r[i], objects);
 
 					if (s_ind >= 0)
@@ -254,7 +292,7 @@ int main(int argc, char** argv)
 						objects[s_ind] = contours_r[i];
 						paths[s_ind].push_back(c_point);
 
-						cout << "path " << paths[s_ind] << endl;
+						//cout << "path " << paths[s_ind] << endl;
 					}
 					else
 					{
@@ -275,16 +313,17 @@ int main(int argc, char** argv)
 
 		for( int i = 0; i < contours.size(); i++ )
 		{
-			cout << "Contour " << i << " size: " << contours[i].size() << ". ";
+
+			/*cout << "Contour " << i << " size: " << contours[i].size() << ". ";
 								cout << "arc_length: " << arcLength(contours[i],true) << ". ";
 								cout << "area: " << contourArea(contours[i],false) << ". ";
-								cout << "(" << contours[i][0].x << "," << contours[i][0].y << ")" << endl;
+								cout << "(" << contours[i][0].x << "," << contours[i][0].y << ")" << endl;*/
 
 			approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true );
 			boundRect[i] = boundingRect( Mat(contours_poly[i]) );
 		//minEnclosingCircle( (Mat)contours_poly[i], center[i], radius[i] );
 		}
-		cout << "cont size: " << contours.size() << endl;
+		//cout << "cont size: " << contours.size() << endl;
 		Mat drawing = Mat::zeros( threshold_output.size(), CV_8UC3 );
 
 		frame.copyTo(drawing);
@@ -295,10 +334,23 @@ int main(int argc, char** argv)
 			rectangle( drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0 );
 		}
 
-		for( int i = 0; i< paths.size(); i++ )
+		/*for( int i = 0; i< paths.size(); i++ )
 		{
-			drawContours( drawing, paths, i, Scalar(0,0,0), 1, 8, vector<Vec4i>(), 0, Point() );
+			//drawContours( drawing, paths, i, Scalar(0,0,0), 1, 8, vector<Vec4i>(), 0, Point() );
+			double dist = pointPolygonTest(int_area,paths[i][0],true);
+			if ((dist < 0))
+				polylines(drawing,paths[i],false,Scalar(240,10,10),2,8,0);
+			else
+				polylines(drawing,paths[i],false,Scalar(10,10,10),1,8,0);
 		}
+
+		for( int i = 0; i< access.size(); i++ )
+		{
+			//drawContours( drawing, paths, i, Scalar(0,0,0), 1, 8, vector<Vec4i>(), 0, Point() );
+			polylines(drawing,access,false,Scalar(128,128,255),3,8,0);
+		}*/
+
+		//cout << "Detected Objects: " << objects.size() << endl;
 
         // Execution time calculations
         tp = ((double)getTickCount() - tp)/getTickFrequency();
@@ -368,7 +420,7 @@ int main(int argc, char** argv)
         if (save_video)
         {
         	//cvtColor(mask_morph,mask_rgb,CV_GRAY2RGB);
-        	outputVideo.write(mask_morph);
+        	outputVideo.write(drawing);
         }
         //outputVideo << bg_mask;
 
@@ -401,7 +453,7 @@ int main(int argc, char** argv)
         if (steps)
         	waitKey(0);
 
-        if (curr_frame >= cap.get(CV_CAP_PROP_FRAME_COUNT))
+        if (curr_frame >= (cap.get(CV_CAP_PROP_FRAME_COUNT)-1))
 		{
 			t = ((double)getTickCount() - t)/getTickFrequency();
 			std::cout << std::endl;
@@ -445,7 +497,7 @@ int find_similar_contour(vector<Point> cont, vector<vector<Point> > cont_vec)
 	double c_x = c_mom.m10/c_mom.m00;
 	double c_y = c_mom.m01/c_mom.m00;
 
-	cout << "MOMS: " << c_mom.m00 << ", " << c_mom.m01 << ", " << c_mom.m10 << " -> " << c_x << ". " << c_y << endl;
+	//cout << "MOMS: " << c_mom.m00 << ", " << c_mom.m01 << ", " << c_mom.m10 << " -> " << c_x << ". " << c_y << endl;
 
 	double olen, oarea;
 
@@ -461,15 +513,15 @@ int find_similar_contour(vector<Point> cont, vector<vector<Point> > cont_vec)
 		double d_x = abs((d_mom.m10/d_mom.m00) - c_x);
 		double d_y = abs((d_mom.m01/d_mom.m00) - c_y);
 
-		cout << "deltas [" << ind << "]: (" << d_len << ", " << d_area << ")-(" << d_x << ", " << d_y << ")";
+		//cout << "deltas [" << ind << "]: (" << d_len << ", " << d_area << ")-(" << d_x << ", " << d_y << ")";
 
-		if ((d_x < 16) && (d_y < 16))
+		if ((d_x < 20) && (d_y < 20))
 		{
-			cout << " = MATCH" << endl;
+			//cout << " = MATCH" << endl;
 			return ind;
 		}
-		else
-			cout << endl;
+		//else
+			//cout << endl;
 
 		ind++;
 	}
